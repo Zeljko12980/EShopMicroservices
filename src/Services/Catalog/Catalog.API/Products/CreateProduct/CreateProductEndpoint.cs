@@ -1,5 +1,7 @@
 ﻿
 
+using Mapster;
+
 namespace Catalog.API.Products.CreateProduct
 {
     public record CreateProductRequest(string name, List<string> category, string description, string imageFile, decimal price);
@@ -10,7 +12,16 @@ namespace Catalog.API.Products.CreateProduct
         {
             app.MapPost("/products", async (CreateProductRequest request, ISender sender) =>
             {
+                /*             var command = new CreateProductCommand(
+                 name: request.name,
+                 category: request.category,
+                 description: request.description,
+                 imageFile: request.imageFile,
+                 price: request.price
+             );*/
+
                 var command = request.Adapt<CreateProductCommand>();
+
 
                 var result = await sender.Send(command);
 
