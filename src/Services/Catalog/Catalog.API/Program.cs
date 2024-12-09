@@ -1,39 +1,42 @@
-using Catalog.API.Products.CreateProduct;
-
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
-builder.Services.AddCarter();
+
+// Add services to the container.
+var assembly = typeof(Program).Assembly;
 builder.Services.AddMediatR(config =>
 {
-    config.RegisterServicesFromAssembly(typeof(Program).Assembly);
+    config.RegisterServicesFromAssembly(assembly);
+    config.AddOpenBehavior(typeof(ValidationBehavior<,>));
+    config.AddOpenBehavior(typeof(LoggingBehavior<,>));
 });
+builder.Services.AddValidatorsFromAssembly(assembly);
 
-builder.Services.AddMarten(opt =>
+builder.Services.AddCarter();
+
+builder.Services.AddMarten(opts =>
 {
-    opt.Connection(builder.Configuration.GetConnectionString("Database")!);
-    opt.AutoCreateSchemaObjects = Weasel.Core.AutoCreate.All; // Automatically create schema objects if needed
+    opts.Connection(builder.Configuration.GetConnectionString("Database")!);
 }).UseLightweightSessions();
 
-// Configure Mapster
-TypeAdapterConfig<CreateProductResult, CreateProductResponse>
-    .NewConfig()
-    .Map(dest => dest.Id, src => src.id); // Map Id explicitly
+if (builder.Environment.IsDevelopment())
+      builder.Services.InitializeMartenWith<CatalogInitialData>();
 
-TypeAdapterConfig<CreateProductRequest, CreateProductCommand>
-    .NewConfig()
-    //.Map(dest => dest.Id, src => Guid.NewGuid())       // Map Id with a new GUID (if applicable)
-    .Map(dest => dest.name, src => src.name)           // Map Name
-    .Map(dest => dest.category, src => src.category)   // Map Category
-    .Map(dest => dest.description, src => src.description) // Map Description
-    .Map(dest => dest.imageFile, src => src.imageFile) // Map ImageFile
-    .Map(dest => dest.price, src => src.price);        // Map Price
+    builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 
-
-TypeAdapterConfig.GlobalSettings.Scan(typeof(Program).Assembly);
+    builder.Services.AddHealthChecks()
+    .AddNpgSql(builder.Configuration.GetConnectionString("Database")!);
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
+// Configure the HTTP request pipeline.
 app.MapCarter();
+
+app.UseExceptionHandler(options => { });
+
+app.UseHealthChecks("/health",
+new HealthCheckOptions
+{
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
+
 app.Run();
