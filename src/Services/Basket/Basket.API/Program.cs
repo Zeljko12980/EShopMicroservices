@@ -1,5 +1,6 @@
 
 
+using BuildingBlocks.Messaging.MassTransit;
 using HealthChecks.UI.Client;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +28,9 @@ builder.Services.AddMarten(opts =>
     opts.Schema.For<ShoppingCart>().Identity(x => x.UserName);
 
 }).UseLightweightSessions();
+
+
+builder.Services.AddMessageBroker(builder.Configuration);
 
 builder.Services.AddExceptionHandler<CustomExceptionHandler>();
 builder.Services.AddHealthChecks()

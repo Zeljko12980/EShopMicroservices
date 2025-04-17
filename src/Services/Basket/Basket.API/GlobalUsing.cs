@@ -15,3 +15,4 @@ global using Microsoft.Extensions.Caching.Distributed;
 global using System.Text.Json;
 global using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 global using Discount.Grpc;
+global using Basket.API.Dtos;
